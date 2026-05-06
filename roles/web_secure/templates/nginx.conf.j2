@@ -1,0 +1,64 @@
+user nginx;
+worker_processes auto;
+
+error_log /usr/local/nginx/logs/error.log;
+pid /usr/local/nginx/logs/nginx.pid;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+
+    include       mime.types;
+    default_type  application/octet-stream;
+
+    log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                    '$status $body_bytes_sent "$http_referer" '
+                    '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log /usr/local/nginx/logs/access.log main;
+
+    sendfile on;
+    keepalive_timeout 65;
+
+    # -------------------------
+    # VIRTUAL HOST TRAFFIC STATUS (VTS)
+    # -------------------------
+    vhost_traffic_status_zone;
+
+    server {
+
+        listen {{ nginx_port | default(80) }};
+        server_name localhost;
+
+        # -------------------------
+        # MAIN APP
+        # -------------------------
+        location / {
+            root html;
+            index index.html index.htm;
+        }
+
+        # -------------------------
+        # VTS MONITORING ENDPOINT
+        # -------------------------
+        location /status {
+            vhost_traffic_status_display;
+            vhost_traffic_status_display_format html;
+        }
+
+        # -------------------------
+        # BASIC SECURITY HEADERS
+        # -------------------------
+        add_header X-Frame-Options "DENY";
+        add_header X-Content-Type-Options "nosniff";
+        add_header X-XSS-Protection "1; mode=block";
+
+        # -------------------------
+        # MODSECURITY (if enabled)
+        # -------------------------
+        modsecurity on;
+        modsecurity_rules_file /etc/nginx/modsec/main.conf;
+    }
+}

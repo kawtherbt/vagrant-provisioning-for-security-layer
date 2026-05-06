@@ -1,7 +1,14 @@
-- name: Install firewalld
-  dnf:
-    name: firewalld
-    state: present
+- name: Start auditd
+  service:
+    name: auditd
+    state: started
+    enabled: yes
+
+- name: Start Docker
+  service:
+    name: docker
+    state: started
+    enabled: yes
 
 - name: Start firewalld
   service:
@@ -27,3 +34,14 @@
 
 - name: Reload firewall
   command: firewall-cmd --reload
+
+- name: Start nginx
+  shell: /usr/local/nginx/sbin/nginx
+
+
+- name: Restart ssh
+  service:
+    name: sshd
+    state: restarted
+
+

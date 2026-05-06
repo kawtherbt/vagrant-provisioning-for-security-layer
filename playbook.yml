@@ -1,6 +1,7 @@
 - hosts: all
-  become: true
-
+  become: yes
+  roles:
+    - web_secure
 
 - include_tasks: docker.yml
 - include_tasks: nginx.yml
