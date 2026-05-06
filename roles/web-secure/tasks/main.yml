@@ -1,0 +1,7 @@
+- include_tasks: docker.yml
+- include_tasks: nginx.yml
+- include_tasks: firewall.yml
+- include_tasks: security.yml
+- include_tasks: audit.yml
+- include_tasks: logrotate.yml
+- include_tasks: sudo.yml

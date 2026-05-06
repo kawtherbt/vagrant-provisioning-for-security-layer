@@ -1,0 +1,54 @@
+- name: Install build deps
+  dnf:
+    name:
+      - gcc
+      - make
+      - pcre-devel
+      - zlib-devel
+      - openssl-devel
+      - git
+    state: present
+
+- name: Download nginx
+  get_url:
+    url: http://nginx.org/download/nginx-1.24.0.tar.gz
+    dest: /tmp/nginx.tar.gz
+
+- name: Extract nginx
+  unarchive:
+    src: /tmp/nginx.tar.gz
+    dest: /tmp
+    remote_src: yes
+
+- name: Clone VTS module
+  git:
+    repo: https://github.com/vozlt/nginx-module-vts.git
+    dest: /tmp/nginx-module-vts
+
+- name: Clone ModSecurity
+  git:
+    repo: https://github.com/SpiderLabs/ModSecurity
+    dest: /opt/modsecurity
+
+- name: Build ModSecurity
+  shell: |
+    cd /opt/modsecurity
+    git submodule init
+    git submodule update
+    ./build.sh
+    ./configure
+    make
+    make install
+
+- name: Configure nginx with modules
+  shell: |
+    cd /tmp/nginx-1.24.0
+    ./configure \
+      --add-module=/tmp/nginx-module-vts \
+      --add-module=/opt/modsecurity/nginx/modsecurity \
+      --with-http_ssl_module
+    make
+    make install
+
+- name: Start nginx
+  shell: /usr/local/nginx/sbin/nginx

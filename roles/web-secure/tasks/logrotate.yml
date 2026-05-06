@@ -1,0 +1,12 @@
+- name: Configure logrotate
+  copy:
+    dest: /etc/logrotate.d/nginx
+    content: |
+      /usr/local/nginx/logs/*.log {
+          daily
+          rotate 7
+          compress
+          missingok
+          notifempty
+          create 0640 root root
+      }
