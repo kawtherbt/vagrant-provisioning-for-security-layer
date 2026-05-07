@@ -1,88 +1,60 @@
-# -------------------------
-# VARIABLES
-# -------------------------
-VM=vagrant
+ROLE=web_secure
 
-# -------------------------
-# BASIC VM LIFECYCLE
-# -------------------------
+.PHONY: all init deps lint up test destroy clean reset ci
+
+# -----------------------------
+# 1. Install dependencies
+# -----------------------------
+init:
+	pip install molecule molecule-docker ansible ansible-lint 
+
+# -----------------------------
+# 2. Install Ansible roles/collections
+# -----------------------------
+# deps:
+# 	ansible-galaxy install -r requirements.yml || true
+
+# -----------------------------
+# 3. Lint Ansible code
+# -----------------------------
+lint:
+	ansible-lint
+
+# -----------------------------
+# 4. Start environment (Molecule create + build image)
+# -----------------------------
 up:
-	vagrant up
+	molecule create
 
-down:
-	vagrant halt
+# -----------------------------
+# 5. Run full test (create → converge → verify → destroy)
+# -----------------------------
+test:
+	molecule test
 
+# -----------------------------
+# 6. Destroy environment
+# -----------------------------
 destroy:
-	vagrant destroy -f
+	molecule destroy
 
-reload:
-	vagrant reload --provision
+# -----------------------------
+# 7. Clean all local artifacts
+# -----------------------------
+clean:
+	rm -rf .molecule
 
-status:
-	vagrant status
+# -----------------------------
+# 8. Full reset cycle (start from scratch)
+# -----------------------------
+reset: destroy clean up test
 
-ssh:
-	vagrant ssh
+# -----------------------------
+# 9. CI pipeline (what GitHub Actions will run)
+# -----------------------------
+ci: lint deps test
 
-# -------------------------
-# PROVISIONING
-# -------------------------
-provision:
-	vagrant provision
-
-rebuild:
-	vagrant destroy -f
-	vagrant up --provision
-
-# -------------------------
-# ANSIBLE ONLY (inside VM)
-# -------------------------
-ansible-check:
-	vagrant ssh -c "ansible --version"
-
-ansible-run:
-	vagrant ssh -c "ansible-playbook /vagrant/playbook.yml"
-
-# -------------------------
-# DEBUGGING
-# -------------------------
-logs:
-	vagrant ssh -c "sudo journalctl -xe"
-
-nginx-logs:
-	vagrant ssh -c "sudo tail -f /usr/local/nginx/logs/error.log"
-
-docker-check:
-	vagrant ssh -c "docker ps && docker --version"
-
-# -------------------------
-# FULL HEALTH CHECK
-# -------------------------
-check:
-	vagrant ssh -c "\
-		echo '--- NGINX ---' && /usr/local/nginx/sbin/nginx -v && \
-		echo '--- DOCKER ---' && docker --version && \
-		echo '--- FIREWALL ---' && sudo firewall-cmd --list-ports \
-	"
-
-
-
-# .PHONY: Deploy 
-
-# -name : initiate vagrant machine 
-# 	runs: vagrant init 
-# -name : starts vagrant machine 
-# 	runs : vagrant up
-# -name : ssh into the host specified 
-# 	runs : ssh -i .vagrant/machines/default/virtualbox/private_key vagrant@127.0.0.1 -p 2222
-# -name : validating installed packages (inside ssh )
-# 	runs : 
-# 		sudo docker -v
-# 		sudo firewall-cmd --version
-# 		sudo nginx -v 
-# 		sudo auditd -v
-# 		sudo modsecurity-nginx -V
-# 		sudo logrotate --version
-
-# -name: generic output 
-# 	runs : echo "Packages installed successfully "
+# -----------------------------
+# 10. EVERYTHING FROM ZERO
+# -----------------------------
+all: init deps lint reset

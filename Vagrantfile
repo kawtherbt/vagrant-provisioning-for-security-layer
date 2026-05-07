@@ -80,16 +80,21 @@ Vagrant.configure("2") do |config|
       dnf install -y epel-release
       sudo dnf install -y ansible
       sudo dnf install -y docker
-      pip install molecule "molecule-plugins[vagrant]"
+      sudo dnf install -y python3-pip
+      sudo dnf install nginx-mod-modsecurity
+      pip install molecule[vagrant,docker,podman]
+      pip install ansible-lint
+      pip install molecule molecule-plugins[vagrant] ansible-core
 
       # sudo dnf install -y nginx
       # sudo systemctl enable --now nginx
 
     SHELL
-
-    config.vm.provision "docker"
+    config.vm.provision "shell", inline: "sudo groupadd docker"
     config.vm.provision "shell", inline: "sudo usermod -aG docker vagrant"
     config.vm.provision "ansible_local" do |ansible|
       ansible.playbook = "/vagrant/playbook.yml"
+    # config.vm.provision "docker"
+
     end
 end

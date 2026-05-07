@@ -5,3 +5,4 @@ vagrant reload
 ssh -i .vagrant/machines/default/virtualbox/private_key vagrant@127.0.0.1 -p 2222
 sudo dnf install nginx-mod-modsecurity
 sudo firewall-cmd --version
+

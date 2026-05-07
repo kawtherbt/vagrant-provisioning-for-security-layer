@@ -1,0 +1,10 @@
+# ---
+# Purpose: bring the instance to the desired state by running the role under test.
+# Molecule calls this playbook with `molecule converge`.
+# ---
+- name: Converge
+  hosts: all
+  become: true
+
+  roles:
+    - role: /mnt/c/Users/front/OneDrive/Desktop/vagrant/roles/web_secure/tasks/
