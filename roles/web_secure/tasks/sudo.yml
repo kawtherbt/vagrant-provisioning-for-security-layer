@@ -1,7 +1,0 @@
-- name: Configure sudo timeout
-  copy:
-    dest: /etc/sudoers.d/custom
-    content: |
-      Defaults timestamp_timeout=5
-      Defaults requiretty
-    mode: '0440'

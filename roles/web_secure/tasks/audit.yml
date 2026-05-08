@@ -1,5 +1,0 @@
-- name: Install auditd
-  dnf:
-    name: audit
-    state: present
-

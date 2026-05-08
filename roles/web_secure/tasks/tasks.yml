@@ -1,0 +1,151 @@
+# - name: Deploy Backend Application
+#   hosts: server
+#   become: yes
+#   vars_files:
+#     - vars/vars.yml
+
+
+- name: Install Docker dependencies
+  dnf:
+    name: dnf-plugins-core
+    state: present
+
+- name: Add Docker repo
+  command: sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+- name: Install Docker
+  dnf:
+    name:
+      - docker
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+    state: present
+
+
+
+- name: Add user to docker group
+  user:
+    name: "{{ item }}"
+    groups: docker
+    append: yes
+  loop: "{{ docker_users }}"
+
+- name: Verify Docker installation
+  command: docker --version
+  register: docker_version
+  changed_when: false
+
+- name: Display Docker version
+  debug:
+    msg: "{{ docker_version.stdout }}"
+
+- name: Install build deps
+  dnf:
+    name:
+      - gcc
+      - make
+      - pcre-devel
+      - zlib-devel
+      - openssl-devel
+      - git
+    state: present
+
+- name: Deploy nginx config 
+  template:
+    src: roles\web_secure\files\nginx.conf.j2
+    dest: /usr/local/nginx/conf/nginx.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart nginx
+  
+- name: Download nginx
+  get_url:
+    url: http://nginx.org/download/nginx-1.24.0.tar.gz
+    dest: /tmp/nginx.tar.gz
+
+- name: Extract nginx
+  unarchive:
+    src: /tmp/nginx.tar.gz
+    dest: /tmp
+    remote_src: yes
+
+- name: Clone VTS module
+  git:
+    repo: https://github.com/vozlt/nginx-module-vts.git
+    dest: /tmp/nginx-module-vts
+
+- name: Clone ModSecurity
+  git:
+    repo: https://github.com/SpiderLabs/ModSecurity
+    dest: /opt/modsecurity
+
+- name: Build ModSecurity
+  shell: |
+    cd /opt/modsecurity
+    git submodule init
+    git submodule update
+    ./build.sh
+    ./configure
+    make
+    make install
+
+- name: Configure nginx with modules
+  shell: |
+    cd /tmp/nginx-1.24.0
+    ./configure \
+      --add-module=/tmp/nginx-module-vts \
+      --add-module=/opt/modsecurity/nginx/modsecurity \
+      --with-http_ssl_module
+    make
+    make install
+
+- name: Configure logrotate
+  copy:
+    dest: /etc/logrotate.d/nginx
+    content: |
+      /usr/local/nginx/logs/*.log {
+          daily
+          rotate 7
+          compress
+          missingok
+          notifempty
+          create 0640 root root
+      }
+
+
+- name: Install firewalld
+  dnf:
+    name: firewalld
+    state: present
+
+
+- name: Install auditd
+  dnf:
+    name: audit
+    state: present
+
+- name: Configure sudo timeout
+  copy:
+    dest: /etc/sudoers.d/custom
+      content: |
+      Defaults timestamp_timeout=5
+      Defaults requiretty
+    mode: '0440'
+
+- name: Set SSH timeout
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^ClientAliveInterval'
+    line: 'ClientAliveInterval 300'
+
+- name: Verify healthcheck
+  uri:
+    url: http://localhost:2222/health
+    status_code: 200
+  register: result
+  until: result.status == 200
+  retries: 10
+  delay: 3
+

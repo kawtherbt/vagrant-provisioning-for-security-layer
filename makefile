@@ -1,60 +1,60 @@
 ROLE=web_secure
 
-.PHONY: all init deps lint up test destroy clean reset ci
+.PHONY: all vagrant_init vagrant_up vagrant_provision vagrant_reload vagrant_ssh init deps lint up test destroy reset ci
 
 # -----------------------------
-# 1. Install dependencies
+# Vagrant setup
 # -----------------------------
+
+vagrant_init:
+	vagrant init
+
+vagrant_up:
+	vagrant up
+
+vagrant_provision:
+	vagrant up --provision
+
+vagrant_reload:
+	vagrant reload
+
+vagrant_ssh:
+	ssh -i .vagrant/machines/default/virtualbox/private_key vagrant@127.0.0.1 -p 2222
+
+# -----------------------------
+# Install dependencies
+# -----------------------------
+
 init:
-	pip install molecule molecule-docker ansible ansible-lint 
+	pip install molecule molecule-docker ansible ansible-lint
 
-# -----------------------------
-# 2. Install Ansible roles/collections
-# -----------------------------
-# deps:
-# 	ansible-galaxy install -r requirements.yml || true
+# install role requirements
+deps:
+	ansible-galaxy install -r roles/requirements.txt || true
 
-# -----------------------------
-# 3. Lint Ansible code
-# -----------------------------
-lint:
-	ansible-lint
+# lint ansible
+# lint:
+#	ansible-lint
 
-# -----------------------------
-# 4. Start environment (Molecule create + build image)
-# -----------------------------
+# initialise env
 up:
+	cd /mnt/c/Users/front/OneDrive/Desktop/vagrant/roles/web_secure && \
 	molecule create
 
-# -----------------------------
-# 5. Run full test (create → converge → verify → destroy)
-# -----------------------------
+# full test scenario
 test:
 	molecule test
 
-# -----------------------------
-# 6. Destroy environment
-# -----------------------------
+# destroy env
 destroy:
 	molecule destroy
 
-# -----------------------------
-# 7. Clean all local artifacts
-# -----------------------------
-clean:
-	rm -rf .molecule
+# full reset scenario (without cleaning .molecule)
+reset: destroy up test
 
-# -----------------------------
-# 8. Full reset cycle (start from scratch)
-# -----------------------------
-reset: destroy clean up test
+# Ci pipeline
+# ci: lint deps test
 
-# -----------------------------
-# 9. CI pipeline (what GitHub Actions will run)
-# -----------------------------
-ci: lint deps test
-
-# -----------------------------
-# 10. EVERYTHING FROM ZERO
-# -----------------------------
-all: init deps lint reset
+# Full scenario
+all:  vagrant_up vagrant_provision vagrant_reload init up test reset
+# all: init deps lint reset

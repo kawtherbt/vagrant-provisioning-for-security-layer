@@ -1,0 +1,59 @@
+- name: Deploy  App
+  hosts: server
+  become: yes
+  vars_files:
+    - vars/vars.yml
+
+tasks 
+  -name: Deploy App
+  - include_tasks: tasks/tasks.yml
+  
+
+handlers:
+  - name: Start auditd
+    service:
+      name: auditd
+      state: started
+      enabled: yes
+
+  - name: Start Docker
+    service:
+      name: docker
+      state: started
+      enabled: yes
+
+  - name: Start firewalld
+    service:
+      name: firewalld
+      state: started
+      enabled: yes
+
+  - name: Allow ports
+    firewalld:
+      port: "{{ item }}"
+      permanent: yes
+      state: enabled
+    loop:
+      - 80/tcp
+      - 443/tcp
+      - 2222/tcp
+
+  - name: Remove SSH default port
+    firewalld:
+      service: ssh
+      state: disabled
+      permanent: yes
+
+  - name: Reload firewall
+    command: firewall-cmd --reload
+
+  - name: Start nginx
+    shell: /usr/local/nginx/sbin/nginx
+
+
+  - name: Restart ssh
+    service:
+      name: sshd
+      state: restarted
+
+

@@ -24,8 +24,7 @@ http {
 
 
     
-#____________________________________
-# VIRTUAL HOST TRAFFIC STATUS (VTS)
+#VTS
     
     vhost_traffic_status_zone;
 
@@ -33,32 +32,26 @@ http {
 
         listen {{ nginx_port | default(80) }};
         server_name localhost;
-
-# -------------------------
-# MAIN APP
+#main app
         
         location / {
             root html;
             index index.html index.htm;
         }
 
-# -------------------------
-# VTS MONITORING ENDPOINT
-        
+#vts monitor endpoint 
         location /status {
             vhost_traffic_status_display;
             vhost_traffic_status_display_format html;
         }
 
-# -------------------------
-# BASIC SECURITY HEADERS
+#security headers
         
         add_header X-Frame-Options "DENY";
         add_header X-Content-Type-Options "nosniff";
         add_header X-XSS-Protection "1; mode=block";
 
-# -------------------------
-# MODSECURITY (if enabled)
+#modsecurity if enabled 
         
         modsecurity on;
         modsecurity_rules_file /etc/nginx/modsec/main.conf;

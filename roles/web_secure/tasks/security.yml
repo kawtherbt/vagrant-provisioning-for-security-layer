@@ -1,5 +1,0 @@
-- name: Set SSH timeout
-  lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^ClientAliveInterval'
-    line: 'ClientAliveInterval 300'

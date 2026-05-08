@@ -79,12 +79,14 @@ Vagrant.configure("2") do |config|
       dnf update -y
       dnf install -y epel-release
       sudo dnf install -y ansible
-      sudo dnf install -y docker
-      sudo dnf install -y python3-pip
-      sudo dnf install nginx-mod-modsecurity
-      pip install molecule[vagrant,docker,podman]
-      pip install ansible-lint
-      pip install molecule molecule-plugins[vagrant] ansible-core
+      # sudo dnf install -y docker
+      # sudo dnf install -y python3-pip
+      # sudo dnf install nginx-mod-modsecurity
+      # pip install molecule[vagrant,docker,podman]
+      # pip install ansible-lint
+      pip install molecule molecule-plugins[vagrant] molecule-plugins[docker] ansible-core
+      
+
 
       # sudo dnf install -y nginx
       # sudo systemctl enable --now nginx
